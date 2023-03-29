@@ -13,7 +13,7 @@ import torch.utils.checkpoint
 
 import diffusers
 import transformers
-from accelerate import Accelerator
+from accelerate import Accelerator, DistributedDataParallelKwargs
 from accelerate.logging import get_logger
 from accelerate.utils import set_seed
 from diffusers import AutoencoderKL, DDPMScheduler, DDIMScheduler
@@ -72,6 +72,7 @@ def main(
     accelerator = Accelerator(
         gradient_accumulation_steps=gradient_accumulation_steps,
         mixed_precision=mixed_precision,
+        kwargs_handlers=[DistributedDataParallelKwargs(find_unused_parameters=True)]
     )
 
     # Make one log on every process with the configuration for debugging.
