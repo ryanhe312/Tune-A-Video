@@ -312,6 +312,7 @@ class TuneAVideoPipeline(DiffusionPipeline):
         self,
         prompt: Union[str, List[str]],
         video_length: Optional[int],
+        uncond_embeddings = None,
         height: Optional[int] = None,
         width: Optional[int] = None,
         num_inference_steps: int = 50,
@@ -378,7 +379,8 @@ class TuneAVideoPipeline(DiffusionPipeline):
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
                 # predict the noise residual
-                noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample.to(dtype=latents_dtype)
+                mixed_embeddings = torch.cat([uncond_embeddings[i], text_embeddings[1:2]], dim=0)
+                noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=mixed_embeddings).sample.to(dtype=latents_dtype)
 
                 # perform guidance
                 if do_classifier_free_guidance:
@@ -395,7 +397,7 @@ class TuneAVideoPipeline(DiffusionPipeline):
                         callback(i, t, latents)
 
         # Post-processing
-        video = self.decode_latents(latents)
+        video = self.decode_latents(latents.half())
 
         # Convert to tensor
         if output_type == "tensor":
