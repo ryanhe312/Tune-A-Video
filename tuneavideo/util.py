@@ -193,7 +193,7 @@ class NullInversion:
                 noise_pred = noise_pred_uncond + self.GUIDANCE_SCALE * (noise_pred_cond - noise_pred_uncond)
                 latents_prev_rec = self.prev_step(noise_pred, t, latent_cur)
                 loss = nnf.mse_loss(latents_prev_rec.float(), latent_prev.float())
-                print(loss.item())
+                bar.set_postfix(inv_loss=f"{loss.item():.4f}")
                 loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()

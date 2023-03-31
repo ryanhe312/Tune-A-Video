@@ -27,6 +27,7 @@ from diffusers.utils import deprecate, logging, BaseOutput
 from einops import rearrange
 
 from ..models.unet import UNet3DConditionModel
+from .. import ptp_utils, ptp
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
@@ -326,6 +327,7 @@ class TuneAVideoPipeline(DiffusionPipeline):
         return_dict: bool = True,
         callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
         callback_steps: Optional[int] = 1,
+        controller: Optional[ptp.AttentionControl] = ptp.AttentionStore(),
         **kwargs,
     ):
         # Default height and width to unet
@@ -334,6 +336,7 @@ class TuneAVideoPipeline(DiffusionPipeline):
 
         # Check inputs. Raise error if not correct
         self.check_inputs(prompt, height, width, callback_steps)
+        ptp_utils.register_attention_control(self, controller)
 
         # Define call parameters
         batch_size = 1 if isinstance(prompt, str) else len(prompt)
@@ -395,6 +398,9 @@ class TuneAVideoPipeline(DiffusionPipeline):
                     progress_bar.update()
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)
+                latents = controller.step_callback(latents)
+
+        ptp_utils.register_attention_control(self, None)
 
         # Post-processing
         video = self.decode_latents(latents.half())
