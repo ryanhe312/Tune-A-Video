@@ -180,6 +180,7 @@ class NullInversion:
         uncond_embeddings_list = []
         latent_cur = latents[-1]
         bar = tqdm(total=num_inner_steps * self.NUM_DDIM_STEPS)
+        bar.set_description("Inverse")
         for i in range(self.NUM_DDIM_STEPS):
             uncond_embeddings = uncond_embeddings.clone().detach().float()
             uncond_embeddings.requires_grad = True
@@ -193,7 +194,7 @@ class NullInversion:
                 noise_pred = noise_pred_uncond + self.GUIDANCE_SCALE * (noise_pred_cond - noise_pred_uncond)
                 latents_prev_rec = self.prev_step(noise_pred, t, latent_cur)
                 loss = nnf.mse_loss(latents_prev_rec.float(), latent_prev.float())
-                bar.set_postfix(inv_loss=f"{loss.item():.4f}")
+                bar.set_postfix(inv_loss=f"{loss.item():.8f}")
                 loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
